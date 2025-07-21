@@ -1594,42 +1594,51 @@ function closePoster() {
         wechatContainer.appendChild(closeBtn);
         document.body.appendChild(wechatContainer);
     } else if (isQQ) {
-        // QQ环境下的保存逻辑
-        alert('请长按图片选择"保存图片"到相册');
-        // 创建适合QQ的预览模式
-        const qqViewer = document.createElement('div');
-        qqViewer.style.position = 'fixed';
-        qqViewer.style.top = '0';
-        qqViewer.style.left = '0';
-        qqViewer.style.width = '100%';
-        qqViewer.style.height = '100%';
-        qqViewer.style.backgroundColor = 'rgba(0,0,0,0.9)';
-        qqViewer.style.display = 'flex';
-        qqViewer.style.alignItems = 'center';
-        qqViewer.style.justifyContent = 'center';
-        qqViewer.style.zIndex = '9999';
+                // QQ环境下的保存逻辑
+                // 创建适合QQ的预览模式
+                const qqViewer = document.createElement('div');
+                qqViewer.style.position = 'fixed';
+                qqViewer.style.top = '0';
+                qqViewer.style.left = '0';
+                qqViewer.style.width = '100%';
+                qqViewer.style.height = '100%';
+                qqViewer.style.backgroundColor = 'rgba(0,0,0,0.9)';
+                qqViewer.style.display = 'flex';
+                qqViewer.style.alignItems = 'center';
+                qqViewer.style.justifyContent = 'center';
+                qqViewer.style.zIndex = '9999';
+                qqViewer.style.touchAction = 'none'; // 防止QQ浏览器默认手势干扰
 
-        const qqImg = document.createElement('img');
-        qqImg.src = shareImageData;
-        qqImg.style.maxWidth = '90%';
-        qqImg.style.maxHeight = '80vh';
-        qqImg.style.border = '8px solid white';
+                const qqImg = document.createElement('img');
+                qqImg.src = shareImageData;
+                qqImg.style.maxWidth = '90%';
+                qqImg.style.maxHeight = '80vh';
+                qqImg.style.border = '8px solid white';
+                qqImg.style.touchAction = 'manipulation'; // 优化触摸体验
 
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = '关闭';
-        closeBtn.style.position = 'absolute';
-        closeBtn.style.top = '20px';
-        closeBtn.style.right = '20px';
-        closeBtn.style.padding = '8px 16px';
-        closeBtn.style.backgroundColor = 'white';
-        closeBtn.style.border = 'none';
-        closeBtn.style.borderRadius = '4px';
-        closeBtn.style.cursor = 'pointer';
-        closeBtn.onclick = () => qqViewer.remove();
+                // 创建内嵌提示而非alert
+                const tipText = document.createElement('div');
+                tipText.textContent = '✅ 长按图片选择"保存图片"到相册';
+                tipText.style.color = 'white';
+                tipText.style.fontSize = '18px';
+                tipText.style.marginTop = '20px';
+                tipText.style.textAlign = 'center';
 
-        qqViewer.appendChild(qqImg);
-        qqViewer.appendChild(closeBtn);
-        document.body.appendChild(qqViewer);
+                const closeBtn = document.createElement('div');
+                closeBtn.textContent = '关闭';
+                closeBtn.style.color = 'white';
+                closeBtn.style.fontSize = '16px';
+                closeBtn.style.marginTop = '15px';
+                closeBtn.style.padding = '8px 20px';
+                closeBtn.style.border = '1px solid white';
+                closeBtn.style.borderRadius = '20px';
+                closeBtn.style.cursor = 'pointer';
+                closeBtn.onclick = () => qqViewer.remove();
+
+                qqViewer.appendChild(qqImg);
+                qqViewer.appendChild(tipText);
+                qqViewer.appendChild(closeBtn);
+                document.body.appendChild(qqViewer);
     } else {
         // 普通浏览器下载逻辑
         const link = document.createElement('a');
