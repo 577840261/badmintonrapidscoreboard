@@ -1,0 +1,3662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>羽毛球极速记分板</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            color: var(--primary-color);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 3.2rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #3498db, #9b59b6, #e74c3c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.3);
+            font-family: 'Arial Black', 'Microsoft YaHei', sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        /* 添加新的加粗样式 */
+        .bold-text {
+            font-weight: bold;
+            font-family: 'Arial Black', 'Microsoft YaHei', sans-serif;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: #777;
+            font-style: italic;
+            border-top: 1px dashed #ddd;
+        }
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+        /* Scoreboard styles */
+        .scoreboard {
+            background-color: white;
+            border-radius: 20px;
+            /* 多层次阴影效果 */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15), 0 5px 15px rgba(0,0,0,0.1);
+            /* 高级边框效果 */
+            border: 1px solid rgba(255,255,255,0.5);
+            /* 背景模糊效果 */
+            backdrop-filter: blur(10px);
+            background-color: rgba(255,255,255,0.9);
+            padding: 30px;
+            margin-bottom: 30px;
+            /* 添加顶部装饰条 */
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 添加顶部渐变装饰条 */
+        .scoreboard::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #3498db, #9b59b6, #e74c3c);
+        }
+        .score-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+        .team-container {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            width: 100%;
+        }
+        .team {
+            text-align: center;
+            /* 添加悬停变换基础 */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 0 10px;
+        }
+
+        .team:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+        }
+        .team-name {
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+    font-weight: 800;
+    color: var(--neutral-800);
+    /* 添加文字描边 */
+    -webkit-text-stroke: 0.5px rgba(0,0,0,0.05);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    font-family: 'Arial Black', 'Microsoft YaHei', sans-serif;
+    /* 添加悬停变换 */
+    transition: all 0.3s ease;
+}
+
+.team-name:hover {
+    color: var(--secondary-color);
+    transform: scale(1.02);
+    text-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+}
+        .score {
+            font-size: 5rem;
+            font-weight: bold;
+            /* 使用渐变色替代纯色 */
+            background: linear-gradient(90deg, var(--secondary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 5px solid rgba(255,255,255,0.8);
+            border-radius: 15px;
+            margin: 0 auto 20px;
+            /* 增强立体效果 */
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.5);
+            /* 添加悬停变换 */
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .score:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 24px rgba(52, 152, 219, 0.15), inset 0 4px 8px rgba(255,255,255,0.6);
+        }
+        .score-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn {
+            padding: 16px 32px;
+            font-size: 1.25rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition-normal);
+            font-weight: 700;
+            background-size: 200% auto;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.05);
+            -webkit-font-smoothing: antialiased;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(255,255,255,0.1), transparent 60%);
+            pointer-events: none;
+        }
+        .btn-primary {
+            background-image: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        .btn-primary:hover {
+    background-position: right center;
+    box-shadow: 0 8px 20px rgba(52, 152, 219, 0.35);
+    transform: translateY(-3px) scale(1.02);
+}
+/* 新添加的提示条和动画样式 */
+.top-notification {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 15px;
+    color: white;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+}
+
+.shake { animation: shake 0.5s ease-in-out; }
+.border-red { border: 2px solid red !important; box-shadow: 0 0 0 2px rgba(255,0,0,0.3) !important; }
+
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    70% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.confetti { position: fixed; width: 10px; height: 10px; animation: fall 5s linear forwards; pointer-events: none; }
+@keyframes fall { 0% { top: -10%; transform: rotate(0deg); } 100% { top: 100%; transform: rotate(720deg); } }
+.btn-danger {
+    background-image: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+        .btn-danger:hover {
+            background-position: right center;
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.35);
+            transform: translateY(-3px) scale(1.02);
+        }
+        /* 添加按钮点击效果 */
+        .btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+        }
+        .btn-dark {
+            background-color: var(--dark-color);
+            color: white;
+        }
+        .btn-dark:hover {
+            background-color: #2c3e50;
+        }
+        .btn-secondary {
+            background-color: #9b59b6;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #8e44ad;
+        }
+        .control-panel {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        /* Result card styles */
+        .result-card {
+            background-color: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.7);
+            /* 精细化阴影层次 */
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.05);
+            /* 移除过时的白边凸框效果 */
+            outline: none;
+            padding: 25px;
+            text-align: center;
+            margin-top: 30px;
+            margin-bottom: 25px;
+            /* 添加过渡动画 */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.08);
+        }
+        /* 添加表单响应式样式 */
+        .result-card input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .result-card .form-group {
+            margin-bottom: 15px;
+        }
+        .result-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: var(--secondary-color);
+        }
+        .result-score {
+            font-size: 3rem;
+            margin: 20px 0;
+        }
+        /* Grouping styles */
+        .grouping-container {
+            padding: 20px;
+        }
+        .players-input {
+            margin-bottom: 20px;
+        }
+        .players-input textarea {
+            width: 100%;
+            height: 100px;
+            padding: 15px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            resize: none;
+        }
+        .group-results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        #group-results .group-card {
+            background-color: white;
+            border-radius: 10px;
+            /* 添加白边凸框效果 */
+            border: 8px solid white !important;
+            box-shadow: 0 0 0 1px #e0e0e0, 0 4px 12px rgba(0,0,0,0.15) !important;
+            outline: 1px solid #f0f0f0 !important;
+            outline-offset: -5px !important;
+            padding: 20px;
+            width: 250px;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+            height: 150px;
+        }
+        .group-card.flipped {
+            transform: rotateY(180deg);
+        }
+        .group-card-front, .group-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .group-card-back {
+            transform: rotateY(180deg);
+        }
+        .group-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+        /* Expense tracker styles */
+        .expense-tracker {
+            padding: 20px;
+        }
+        .expense-form {
+            background-color: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.7);
+            /* 精细化阴影层次 */
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.05);
+            /* 移除过时的白边凸框效果 */
+            outline: none;
+            padding: 25px;
+            margin-bottom: 25px;
+            /* 添加过渡动画 */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .expense-form:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.08);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+        }
+        .participants-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .participant-checkbox {
+            display: none;
+        }
+        .participant-label {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #eee;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .participant-checkbox:checked + .participant-label {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        .expense-result {
+            margin-top: 30px;
+            background-color: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.7);
+            /* 精细化阴影层次 */
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.05);
+            /* 移除过时的白边凸框效果 */
+            outline: none;
+            padding: 25px;
+            margin-bottom: 25px;
+            /* 添加过渡动画 */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .expense-result:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.08);
+        }
+        .expense-summary {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+        .expense-details {
+            margin-top: 20px;
+        }
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            list-style: none;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            font-family: 'Arial Black', 'Microsoft YaHei', sans-serif;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .nav-tab.active {
+            border-bottom-color: var(--secondary-color);
+            color: var(--secondary-color);
+        }
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .score-display {
+                flex-direction: column;
+                gap: 30px;
+            }
+            .team-container {
+                gap: 30px; /* 减小团队间距 */
+            }
+            .score {
+                font-size: 4rem;
+                width: 120px;
+                height: 120px;
+            }
+            .control-panel {
+                flex-wrap: wrap;
+                gap: 10px; /* 减小按钮间距 */
+            }
+            .btn {
+                padding: 10px 20px; /* 进一步减小按钮内边距 */
+                font-size: 0.9rem;
+                flex: 1 0 40%; /* 按钮自适应宽度 */
+            }
+            h1 {
+                font-size: 2.5rem; /* 调整标题大小 */
+            }
+        }
+        /* Landscape mode for score projection */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .scoreboard {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+            .score-display {
+                margin-bottom: 20px;
+            }
+            .score {
+                font-size: 3.5rem;
+                width: 100px;
+                height: 100px;
+            }
+            .team-name {
+                font-size: 1.2rem;
+            }
+            h1 {
+                font-size: 1.8rem;
+                margin-bottom: 5px;
+            }
+        }
+
+        /* 新增小屏幕专用规则 */
+        @media (max-width: 480px) {
+            .team-container {
+                gap: 15px;
+            }
+            .team {
+                padding: 10px 5px;
+                margin: 0;
+            }
+            .team-name {
+                font-size: 1.5rem;
+            }
+            .score {
+                font-size: 3.5rem;
+                width: 100px;
+                height: 100px;
+            }
+            .control-panel {
+                gap: 8px;
+            }
+            .btn {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+                flex: 1 0 45%;
+            }
+            .container {
+                padding: 10px;
+            }
+            .scoreboard {
+                padding: 20px 15px;
+            }
+            .result-card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 添加全屏背景Canvas -->
+    <canvas id="mainBackgroundCanvas" style="position: fixed; top: 0; left: 0; z-index: -1;"></canvas>
+
+    <div class="container">
+        <header>
+            <h1>羽毛球极速记分板</h1>
+            <p class="bold-text auto-color">设计者：亍开 古明月</p>
+            <p class="bold-text auto-color">开发者：亍开（张鑫）</p>
+            <p class="bold-text auto-color">QQ: 1822520752（建议反馈）</p>
+        </header>
+
+        <div id="top-notification" class="top-notification"></div>
+
+        <ul class="nav-tabs">
+            <li class="nav-tab active auto-color" data-screen="scoreboard">记分板</li>
+            <li class="nav-tab auto-color" data-screen="grouping">智能分组</li>
+            <li class="nav-tab auto-color" data-screen="expense">费用计算</li>
+        </ul>
+
+        <!-- Scoreboard Screen -->
+        <div id="scoreboard" class="screen active">
+            <div class="scoreboard">
+                <div class="score-display">
+                    <div style="text-align: center; width: 100%; margin-bottom: 20px;">
+                        <span style="font-size: 1.5rem; font-weight: bold;">比赛时长: </span>
+                        <span id="match-timer" style="font-size: 1.5rem; font-weight: bold; color: var(--accent-color);">00:00</span>
+                    </div>
+                    <div class="team-container">
+                    <div class="team">
+                        <div class="team-name">己方</div>
+                        <div class="score" id="team-a-score">0</div>
+                        <div class="score-controls">
+                            <button class="btn btn-primary" onclick="updateScore('a', 1)">+1</button>
+                            <button class="btn btn-danger" onclick="updateScore('a', -1)">-1</button>
+                        </div>
+                    </div>
+                    <div class="team">
+                        <div class="team-name">对方</div>
+                        <div class="score" id="team-b-score">0</div>
+                        <div class="score-controls">
+                            <button class="btn btn-primary" onclick="updateScore('b', 1)">+1</button>
+                            <button class="btn btn-danger" onclick="updateScore('b', -1)">-1</button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                <div class="control-panel">
+            <button id="reset-button" class="btn btn-dark" onclick="resetScore()">重置比分</button>
+            <button id="timer-button" class="btn btn-primary" onclick="toggleTimer()">开始比赛</button>
+            <button id="end-match-button" class="btn btn-danger" onclick="showResultForm()">结束比赛</button>
+            <!-- 添加切换背景按钮 -->
+            <button id="change-bg-button" class="btn btn-secondary" onclick="changeMainBackground()">切换背景</button>
+        </div>
+            </div>
+
+            <!-- Result Form (Hidden by default) -->
+            <div id="result-form" class="result-card" style="display: none;">
+                <h2 class="result-title">比赛结果</h2>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                <div class="form-group" style="flex: 1;">
+                    <label for="team-a-names">己方选手（格式：老王/老张）</label>
+                    <input type="text" id="team-a-names" placeholder="例如：老王/老张">
+                </div>
+                <div style="display: flex; align-items: flex-end; padding-bottom: 24px;">vs</div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="team-b-names">对方选手（格式：小李/小陈）</label>
+                    <input type="text" id="team-b-names" placeholder="例如：小李/小陈">
+                </div>
+            </div>
+                <button class="btn btn-primary" onclick="generateResult()">生成赛果卡片</button>
+            </div>
+
+            <!-- Result Card (Hidden by default) -->
+            <div id="result-card" class="result-card" style="display: none;">
+        <h2 class="result-title" id="result-title-text"></h2>
+        <div class="result-score" id="result-score-text"></div>
+        <div class="match-date" id="match-date"></div>
+        <button class="btn btn-primary" onclick="shareResult()">分享结果</button>
+        <button class="btn btn-dark" onclick="generatePoster()" style="margin-top: 10px;">打开海报</button>
+    </div>
+        </div>
+
+        <!-- Grouping Screen -->
+        <div id="grouping" class="screen">
+            <div class="grouping-container">
+                <div class="players-input">
+                    <label for="players-list">输入参与人员（每行一个名字）</label>
+                    <textarea id="players-list" placeholder="张三
+李四
+王五
+赵六
+钱七
+孙八"></textarea>
+                </div>
+                <div class="control-panel">
+                    <button class="btn btn-primary" onclick="randomGroups()">随机分组</button>
+                    <button class="btn btn-dark" onclick="clearGroups()">清空结果</button>
+                </div>
+                <div class="group-results" id="group-results">
+                    <!-- Group results will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense Tracker Screen -->
+        <div id="expense" class="screen">
+            <div class="expense-tracker">
+                <div class="expense-form">
+                    <div class="form-group">
+                        <label for="expense-type">费用类型</label>
+                        <select id="expense-type">
+                            <option value="场地费">场地费</option>
+                            <option value="球费">球费</option>
+                            <option value="饮用水">饮用水</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="total-amount">总金额 (元)</label>
+                        <input type="number" id="total-amount" min="0" step="0.01" placeholder="输入总金额">
+                    </div>
+                    <div class="form-group">
+                        <label>参与人员</label>
+                        <div class="players-input">
+                            <textarea id="expense-players" placeholder="张三
+李四
+王五
+赵六
+钱七
+孙八"></textarea>
+                        </div>
+                        <div class="participants-list" id="participants-list">
+                            <!-- Participants will be inserted here -->
+                        </div>
+                        <button class="btn btn-primary" style="margin-top: 15px;" onclick="generateParticipants()">生成选择框</button>
+                    </div>
+                    <div class="control-panel">
+                <button class="btn btn-primary" onclick="calculateExpense()">计算分摊</button>
+                <button class="btn btn-danger" onclick="clearExpenseResult()">清空结果</button>
+            </div>
+                </div>
+
+                <div class="expense-result" id="expense-result" style="display: none;">
+                    <h2 class="result-title">费用分摊结果</h2>
+                    <div class="expense-summary" id="expense-summary"></div>
+                    <div class="expense-details" id="expense-details">
+                        <!-- Expense details will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+      <footer>
+        </footer>
+
+    <script>
+let timerInterval;
+let seconds = 0;
+let timerRunning = false;
+
+function toggleTimer() {
+    const timerButton = document.getElementById('timer-button');
+    if (timerRunning) {
+        clearInterval(timerInterval);
+        timerButton.textContent = '继续比赛';
+    } else {
+        timerInterval = setInterval(updateTimer, 1000);
+        timerButton.textContent = '暂停比赛';
+    }
+    timerRunning = !timerRunning;
+}
+
+function updateTimer() {
+    seconds++;
+    const minutes = Math.floor(seconds / 60);
+    const displaySeconds = seconds % 60;
+    document.getElementById('match-timer').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
+}
+
+function resetTimer() {
+    clearInterval(timerInterval);
+    seconds = 0;
+    timerRunning = false;
+    document.getElementById('match-timer').textContent = '00:00';
+    document.getElementById('timer-button').textContent = '开始比赛';
+}
+
+        // Global variables
+        let scoreA = 0;
+        let scoreB = 0;
+        let currentScreen = 'scoreboard';
+        // 在全局变量区域添加
+        let mainBackgroundCanvas = null;
+        let mainBackgroundCtx = null;
+        // 添加比赛结束时的时间和时长变量
+        let finalMatchTime = 0;
+        let finalMatchDate = null;
+        // 全局变量 - 添加背景相关变量
+        let currentBackgroundIndex = 1;
+        const backgroundStyles = [
+            // 1. 蓝色渐变背景
+            (ctx, width, height) => {
+                const grad = ctx.createLinearGradient(0, 0, width, height);
+                grad.addColorStop(0, '#4facfe');
+                grad.addColorStop(1, '#00f2fe');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            },
+            // 2. 紫色到红色渐变背景（新样式）
+            (ctx, width, height) => {
+                const grad = ctx.createLinearGradient(0, 0, 0, height);
+                grad.addColorStop(0, '#4A148C');
+                grad.addColorStop(1, '#C2185B');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            },
+            // 3. 粉色渐变背景
+            (ctx, width, height) => {
+                const grad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width/2);
+                grad.addColorStop(0, '#FF69B4');
+                grad.addColorStop(1, '#FFC0CB');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            },
+            // 4. 网格纹理背景
+            (ctx, width, height) => {
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, width, height);
+                ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+                ctx.lineWidth = 1;
+                const gridSize = 30;
+                for(let i=0; i<=width; i+=gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, height);
+                    ctx.stroke();
+                }
+                for(let i=0; i<=height; i+=gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(width, i);
+                    ctx.stroke();
+                }
+            },
+            // 5. 金色渐变背景
+            (ctx, width, height) => {
+                const grad = ctx.createLinearGradient(0, 0, 0, height);
+                grad.addColorStop(0, '#FFD700');
+                grad.addColorStop(1, '#FFA500');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            },
+            // 6. 绿色渐变背景
+            (ctx, width, height) => {
+                const grad = ctx.createLinearGradient(0, height, width, 0);
+                grad.addColorStop(0, '#3CB371');
+                grad.addColorStop(1, '#98FB98');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            },
+            // 7. 红色渐变背景
+            (ctx, width, height) => {
+                const grad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
+                grad.addColorStop(0, '#FF4500');
+                grad.addColorStop(1, '#DC143C');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            },
+            // 8. 波浪纹理背景 - 增强版
+        (ctx, width, height) => {
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            
+            // 增强波浪细节和层次感
+            const waveCount = 3;
+            const segmentWidth = 50;
+            const amplitudes = [30, 20, 15]; // 不同波浪振幅
+            const speeds = [0.03, 0.05, 0.07]; // 不同波浪速度
+            
+            for(let i=0; i<waveCount; i++){
+                ctx.beginPath();
+                ctx.moveTo(0, height/2 + Math.sin(Date.now()*speeds[i])*amplitudes[i]);
+                
+                for(let x=0; x<width; x+=segmentWidth){
+                    const timeFactor = Date.now() * speeds[i] * 0.001;
+                    const cp1x = x + segmentWidth/3;
+                    const cp1y = height/2 + Math.sin(x*0.02 + timeFactor)*amplitudes[i];
+                    const cp2x = x + segmentWidth*2/3;
+                    const cp2y = height/2 + Math.sin(x*0.02 + Math.PI/3 + timeFactor)*amplitudes[i];
+                    const endX = x + segmentWidth;
+                    const endY = height/2 + Math.sin(x*0.02 + Math.PI/2 + timeFactor)*amplitudes[i];
+                    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
+                }
+                
+                ctx.lineTo(width, height);
+                ctx.lineTo(0, height);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            // 添加动态光点效果
+            const lightCount = 15;
+            for(let i=0; i<lightCount; i++){
+                const size = Math.random() * 3 + 1;
+                const x = Math.random() * width;
+                const y = Math.random() * height * 0.7;
+                const opacity = Math.random() * 0.5 + 0.2;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                ctx.fill();
+            }
+        },
+            // 9. 深色渐变背景
+            (ctx, width, height) => {
+                const grad = ctx.createLinearGradient(0, 0, width, height);
+                grad.addColorStop(0, '#1a2a6c');
+                grad.addColorStop(1, '#b21f1f');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            },
+            // 10. 紫色粉色渐变背景
+            (ctx, width, height) => {
+                const grad = ctx.createLinearGradient(0, 0, width, height);
+                grad.addColorStop(0, '#9D50BB');
+                grad.addColorStop(1, '#6E48AA');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            }
+        ]
+
+        // 添加背景缓存机制
+        const backgroundCache = [];
+        let isBackgroundCached = false;
+
+        // 预缓存所有背景
+        function cacheBackgrounds() {
+            if (isBackgroundCached) return;
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 600; // 匹配海报宽度
+            canvas.height = 700; // 匹配海报高度
+            
+            // 缓存所有背景
+            backgroundStyles.forEach((style, index) => {
+                const offscreenCanvas = document.createElement('canvas');
+                offscreenCanvas.width = canvas.width;
+                offscreenCanvas.height = canvas.height;
+                const offscreenCtx = offscreenCanvas.getContext('2d');
+                
+                // 绘制背景到离屏canvas
+                style(offscreenCtx, canvas.width, canvas.height);
+                
+                // 存储缓存
+                backgroundCache[index] = offscreenCanvas;
+            });
+            
+            isBackgroundCached = true;
+        }
+
+        // 页面加载时预缓存背景
+        window.addEventListener('load', function() {
+            cacheBackgrounds();
+            
+            // 初始化主界面背景Canvas
+            mainBackgroundCanvas = document.getElementById('mainBackgroundCanvas');
+            mainBackgroundCtx = mainBackgroundCanvas.getContext('2d');
+            
+            // 设置Canvas尺寸为窗口大小
+            resizeMainBackground();
+            // 绘制初始背景
+            drawMainBackground();
+            
+            // 添加窗口大小改变事件监听
+            window.addEventListener('resize', resizeMainBackground);
+        });
+
+        // Initialize the app
+        // 添加背景相关函数
+        function resizeMainBackground() {
+            if (!mainBackgroundCanvas) return;
+            mainBackgroundCanvas.width = window.innerWidth;
+            mainBackgroundCanvas.height = window.innerHeight;
+            // 调整大小时重新绘制背景
+            drawMainBackground();
+        }
+
+        function drawMainBackground() {
+    if (!mainBackgroundCtx || !backgroundStyles[currentBackgroundIndex]) return;
+    
+    const width = mainBackgroundCanvas.width;
+    const height = mainBackgroundCanvas.height;
+    
+    // 使用现有的背景样式绘制主界面背景
+    backgroundStyles[currentBackgroundIndex](mainBackgroundCtx, width, height);
+    
+    // 添加文本颜色自适应逻辑
+    updateTextColors();
+}
+
+// 新增：文本颜色自适应函数
+function updateTextColors() {
+    // 获取所有需要自适应颜色的元素
+    const autoColorElements = document.querySelectorAll('.auto-color');
+    
+    autoColorElements.forEach(element => {
+        // 获取元素位置和尺寸
+        const rect = element.getBoundingClientRect();
+        // 计算元素中心位置
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        // 从背景Canvas获取像素数据
+        const pixel = mainBackgroundCtx.getImageData(centerX, centerY, 1, 1).data;
+        // 计算亮度 (0-255)
+        const brightness = (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]);
+        
+        // 根据亮度设置文本颜色和阴影
+        if (brightness > 128) {
+            // 亮背景：使用深色文本
+            element.style.color = '#2c3e50';
+            element.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
+        } else {
+            // 暗背景：使用白色文本
+            element.style.color = '#ffffff';
+            element.style.textShadow = '0 1px 2px rgba(0,0,0,0.5)';
+        }
+    });
+}
+
+function changeMainBackground() {
+            // 循环切换背景
+            currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundStyles.length;
+            drawMainBackground();
+            
+            // 同步更新海报背景
+            if (document.getElementById('posterCanvas').style.display !== 'none') {
+                generatePoster();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up navigation tabs
+            const navTabs = document.querySelectorAll('.nav-tab');
+            navTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    navTabs.forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    // Hide all screens
+                    document.querySelectorAll('.screen').forEach(screen => {
+                        screen.classList.remove('active');
+                    });
+                    // Show selected screen
+                    const screenId = this.getAttribute('data-screen');
+                    document.getElementById(screenId).classList.add('active');
+                    currentScreen = screenId;
+                });
+            });
+
+            // 初始化时绑定事件监听（只绑定一次）
+    const canvas = document.getElementById('posterCanvas');
+    canvas.addEventListener('click', handleButtonClick);
+    canvas.addEventListener('mousemove', handleButtonHover);
+
+    // Check for offline support
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('sw.js').then(function(registration) {
+                console.log('ServiceWorker registration successful');
+            }, function(err) {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+    }
+        });
+
+        // Scoreboard functions
+        function updateScore(team, amount) {
+            if (!timerRunning) {
+                alert('请先点击"开始比赛"才能调整比分');
+                return;
+            }
+            if (team === 'a') {
+                scoreA = Math.max(0, scoreA + amount);
+                document.getElementById('team-a-score').textContent = scoreA;
+            } else {
+                scoreB = Math.max(0, scoreB + amount);
+                document.getElementById('team-b-score').textContent = scoreB;
+            }
+            // Save score to localStorage for offline support
+            localStorage.setItem('scoreA', scoreA);
+            localStorage.setItem('scoreB', scoreB);
+        }
+
+        function resetScore() {
+    scoreA = 0;
+    scoreB = 0;
+    document.getElementById('team-a-score').textContent = scoreA;
+    document.getElementById('team-b-score').textContent = scoreB;
+    document.getElementById('result-form').style.display = 'none';
+    document.getElementById('result-card').style.display = 'none';
+    localStorage.removeItem('scoreA');
+    localStorage.removeItem('scoreB');
+    resetTimer();
+}
+
+        function showResultForm() {
+            // 停止比赛时长计时器
+            clearInterval(timerInterval);
+            document.getElementById('result-form').style.display = 'block';
+            document.getElementById('result-card').style.display = 'none';
+        }
+
+        function generateResult() {
+            const teamANames = document.getElementById('team-a-names').value;
+            const teamBNames = document.getElementById('team-b-names').value;
+            if (!teamANames || !teamBNames) {
+                alert('请输入双方选手昵称');
+                return;
+            }
+            const playerNames = `${teamANames} vs ${teamBNames}`;
+
+            // 保存比赛结束时的时间和时长
+            finalMatchTime = seconds; // 保存比赛时长（秒数）
+            finalMatchDate = new Date(); // 保存比赛结束时间
+
+            // Update result card
+            document.getElementById('result-title-text').textContent = playerNames;
+            document.getElementById('result-score-text').textContent = `${scoreA} - ${scoreB}`;
+            document.getElementById('match-date').textContent = finalMatchDate.toLocaleString();
+
+            // Show result card and hide form
+            document.getElementById('result-form').style.display = 'none';
+            document.getElementById('result-card').style.display = 'block';
+
+            // Save match result to localStorage
+            const matchResult = {
+                players: playerNames,
+                scoreA: scoreA,
+                scoreB: scoreB,
+                date: new Date().toISOString()
+            };
+            const matchHistory = JSON.parse(localStorage.getItem('matchHistory') || '[]');
+            matchHistory.push(matchResult);
+            localStorage.setItem('matchHistory', JSON.stringify(matchHistory));
+
+            // 生成海报
+            generatePoster();
+        }
+
+        function shareResult() {
+            // In a real app, this would use the Web Share API if available
+            // For this demo, we'll just copy to clipboard
+            const resultText = `${document.getElementById('result-title-text').textContent}\n比分: ${document.getElementById('result-score-text').textContent}\n日期: ${document.getElementById('match-date').textContent}`;
+
+            navigator.clipboard.writeText(resultText).then(function() {
+                alert('赛果已复制到剪贴板，可以粘贴分享了！');
+            }, function(err) {
+                alert('无法复制文本: ', err);
+            });
+        }
+
+        function generatePoster(includeButtons = true) {
+    const canvas = document.getElementById('posterCanvas');
+    const overlay = document.getElementById('posterOverlay');
+    const ctx = canvas.getContext('2d');
+    const teamANames = document.getElementById('team-a-names').value;
+    const teamBNames = document.getElementById('team-b-names').value;
+    const scoreA = parseInt(document.getElementById('team-a-score').textContent);
+    const scoreB = parseInt(document.getElementById('team-b-score').textContent);
+    const winner = scoreA > scoreB ? '己方' : '对方';
+    const winnerText = '胜方';
+    const loserText = '败方';
+    const netScore = Math.abs(scoreA - scoreB);
+
+    // 添加背景亮度检测
+    function getContrastColor() {
+        // 获取背景中心区域像素亮度
+        const imageData = ctx.getImageData(canvas.width/2 - 50, canvas.height/2 - 50, 100, 100);
+        const data = imageData.data;
+        let brightnessSum = 0;
+        
+        // 采样计算平均亮度
+        for(let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i+1];
+            const b = data[i+2];
+            brightnessSum += (0.299*r + 0.587*g + 0.114*b);
+        }
+        
+        const avgBrightness = brightnessSum / (data.length/4);
+        return avgBrightness > 128 ? '#222' : '#fff'; // 亮背景用深色，暗背景用白色
+    }
+
+    if (!teamANames || !teamBNames) {
+        alert('请输入双方选手昵称');
+        return;
+    }
+    // 验证比赛结束数据
+    if (typeof finalMatchTime === 'undefined' || !finalMatchDate) {
+        alert('请先结束比赛再生成海报');
+        return;
+    }
+
+    // 使用比赛结束时保存的时长
+    const minutes = Math.floor(finalMatchTime / 60);
+    const matchTime = `${minutes}:${(finalMatchTime % 60).toString().padStart(2, '0')}`;
+
+    // 设置canvas尺寸（统一宽高比）
+        const baseWidth = 600; // 基准宽度
+        const baseHeight = 700; // 基准高度
+        const aspectRatio = baseWidth / baseHeight;
+        
+        // 根据屏幕尺寸计算最大可用尺寸
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const maxWidth = Math.min(baseWidth, screenWidth * 0.9);
+        const maxHeight = Math.min(baseHeight, screenHeight * 0.8);
+        
+        // 根据宽高比确定最终尺寸
+        let canvasWidth, canvasHeight;
+        if (maxWidth / maxHeight > aspectRatio) {
+            canvasHeight = maxHeight;
+            canvasWidth = canvasHeight * aspectRatio;
+        } else {
+            canvasWidth = maxWidth;
+            canvasHeight = canvasWidth / aspectRatio;
+        }
+        
+        const scaleFactor = canvasWidth / baseWidth; // 计算缩放因子
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+
+        // 添加横屏适配
+        function adjustForOrientation() {
+            return { scale: scaleFactor, yOffset: 0 };
+        }
+
+        const orientationAdjust = adjustForOrientation();
+
+        // 绘制背景（只绘制一次）
+            // 使用主界面相同的渐变背景
+            // 绘制背景
+            if (isBackgroundCached && backgroundCache[currentBackgroundIndex]) {
+                // 使用缓存的背景
+                ctx.drawImage(backgroundCache[currentBackgroundIndex], 0, 0, canvas.width, canvas.height);
+            } else {
+                // 直接绘制背景作为备选方案
+                backgroundStyles[currentBackgroundIndex](ctx, canvas.width, canvas.height);
+            }
+
+            // 添加半透明覆盖层增强文本可读性
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 添加纹理效果
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                ctx.beginPath();
+                ctx.arc(x, y, Math.random() * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // 绘制标题（增强版 - 主界面风格）
+            const titleGradient = ctx.createLinearGradient(0, 40, canvas.width, 80);
+            titleGradient.addColorStop(0, '#3498db');
+            titleGradient.addColorStop(1, '#9b59b6');
+            
+            ctx.font = `bold ${getScaledFontSize(46)}px "Arial Black", "Microsoft YaHei", sans-serif`;
+            ctx.fillStyle = titleGradient;
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            ctx.shadowBlur = 8 * scaleFactor;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 4 * scaleFactor;
+            ctx.fillText('羽毛球比赛结果', canvas.width / 2, 80 * scaleFactor);
+            ctx.shadowBlur = 0; // 重置阴影
+
+            // 绘制比分前添加信息卡片背景
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.beginPath();
+            ctx.roundRect(canvas.width/2 - 250*scaleFactor, 100*scaleFactor, 500*scaleFactor, 480*scaleFactor, 20);
+            ctx.fill();
+            // 添加多层次阴影效果
+            // ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+            // ctx.shadowBlur = 15;
+            // ctx.shadowOffsetX = 0;
+            // ctx.shadowOffsetY = 8;
+            
+            // 绘制选手信息 - 添加文本溢出处理
+        function getScaledFontSize(baseSize) {
+            return Math.max(16, baseSize * scaleFactor); // 确保最小字体大小
+        }
+
+        // 绘制选手信息 - 统一字体大小并添加空格对齐
+        const textColor = getContrastColor();
+        // 胜方文本（添加首尾空格保持长度一致）
+        const teamAText = ` ${teamANames} ${scoreA > scoreB ? winnerText : loserText} `;
+        // 文本溢出处理
+        let teamAFontSize = getScaledFontSize(28 * orientationAdjust.scale);
+        ctx.font = `bold ${teamAFontSize}px "Arial Black", "Microsoft YaHei", sans-serif`;
+        while (ctx.measureText(teamAText).width > canvas.width * 0.8 && teamAFontSize > 16) {
+            teamAFontSize--;
+            ctx.font = `bold ${teamAFontSize}px "Arial Black", "Microsoft YaHei", sans-serif`;
+        }
+        ctx.fillStyle = scoreA > scoreB ? '#e74c3c' : '#3498db';
+        ctx.strokeStyle = textColor;
+        ctx.lineWidth = 2;
+        ctx.strokeText(teamAText, canvas.width / 2, 150 * scaleFactor);
+        ctx.fillText(teamAText, canvas.width / 2, 150 * orientationAdjust.scale + orientationAdjust.yOffset);
+            // 败方文本（添加首尾空格保持长度一致）
+            ctx.fillStyle = scoreB > scoreA ? '#e74c3c' : '#3498db';
+            ctx.strokeText(` ${teamBNames} ${scoreB > scoreA ? winnerText : loserText} `, canvas.width / 2, 220 * scaleFactor);
+            ctx.fillText(` ${teamBNames} ${scoreB > scoreA ? winnerText : loserText} `, canvas.width / 2, 220 * orientationAdjust.scale + orientationAdjust.yOffset);
+            
+            // 重置阴影
+            ctx.shadowBlur = 0;
+
+            // 绘制比分（增强版）
+            ctx.font = `bold ${getScaledFontSize(90)}px "Arial Black", "Microsoft YaHei", sans-serif`;
+            // 使用主界面相同的渐变效果
+            const scoreGradient = ctx.createLinearGradient(canvas.width/2 - 100*scaleFactor, 320*scaleFactor, canvas.width/2 + 100*scaleFactor, 320*scaleFactor);
+            scoreGradient.addColorStop(0, '#3498db');
+            scoreGradient.addColorStop(1, '#e74c3c');
+            ctx.fillStyle = scoreGradient;
+            ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+            ctx.lineWidth = 4 * scaleFactor;
+            ctx.strokeText(`${scoreA} - ${scoreB}`, canvas.width / 2, 340 * scaleFactor);
+            ctx.fillText(`${scoreA} - ${scoreB}`, canvas.width / 2, 340 * orientationAdjust.scale + orientationAdjust.yOffset);
+            // 添加发光效果
+            ctx.shadowBlur = 0;
+
+            // 绘制关键数据
+            ctx.font = `bold ${getScaledFontSize(24)}px "Arial Black", "Microsoft YaHei", sans-serif`;
+            ctx.fillStyle = '#333';
+            ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+            ctx.lineWidth = 1.5 * scaleFactor;
+            ctx.strokeText(`比赛时长: ${matchTime}`, canvas.width / 2, 400 * scaleFactor);
+            ctx.fillText(`比赛时长: ${matchTime}`, canvas.width / 2, 400 * orientationAdjust.scale + orientationAdjust.yOffset);
+            ctx.strokeText(`净胜分: ${netScore}分`, canvas.width / 2, 440 * scaleFactor);
+            ctx.fillText(`净胜分: ${netScore}分`, canvas.width / 2, 440 * orientationAdjust.scale + orientationAdjust.yOffset);
+            ctx.strokeText(`胜者: ${winner}`, canvas.width / 2, 480 * scaleFactor);
+            ctx.fillText(`胜者: ${winner}`, canvas.width / 2, 480 * orientationAdjust.scale + orientationAdjust.yOffset);
+
+            // 将时间移到胜者信息下方（Y坐标调整为540）
+            // 使用比赛结束时保存的时间
+            const timeStr = finalMatchDate.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }).replace(/\//g, '-');
+            ctx.save();
+            // 清除阴影属性设置
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.font = `bold ${getScaledFontSize(22)}px "Arial Black", "Microsoft YaHei", sans-serif`;
+            ctx.fillStyle = '#333333';
+            ctx.textAlign = 'center';
+            ctx.fillText(`比赛时间: ${timeStr}`, canvas.width / 2, 520*scaleFactor);
+            ctx.restore();
+            
+            // 将水印移到时间下方（Y坐标调整为600）
+            ctx.save();
+            ctx.font = `italic ${getScaledFontSize(20)}px Arial, SimHei`;
+            // 创建高对比度渐变
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+            gradient.addColorStop(0, 'rgba(100, 149, 237, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 105, 180, 0.8)');
+            ctx.fillStyle = gradient;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // 调整位置至比赛时间下方25像素
+            ctx.fillText('羽毛球极速计分板 | 亍幵', canvas.width / 2, 560*scaleFactor);
+            ctx.restore();
+            
+        
+            // 绘制分享引导
+        ctx.font = 'italic 22px Arial';
+        ctx.fillStyle = '#3498db';
+
+    // 优化按钮点击区域计算
+    const buttonWidth = 120 * scaleFactor;
+    const buttonHeight = 40 * scaleFactor;
+    const buttonY = canvas.height - 60 * orientationAdjust.scale + orientationAdjust.yOffset;
+    const buttonPadding = 20 * scaleFactor;
+    const totalButtonWidth = (buttonWidth * 3) + (buttonPadding * 2);
+    const startX = (canvas.width - totalButtonWidth) / 2;
+
+    // 绘制分享海报按钮（增强版 - 主界面风格）
+    if (includeButtons) {
+    const shareGradient = ctx.createLinearGradient(startX, buttonY, startX, buttonY + buttonHeight);
+    shareGradient.addColorStop(0, '#3498db');
+    shareGradient.addColorStop(1, '#2980b9');
+    ctx.fillStyle = shareGradient;
+    // 添加圆角和阴影
+    ctx.beginPath();
+    ctx.roundRect(startX, buttonY, buttonWidth, buttonHeight, 12);
+    ctx.fill();
+    // 添加高光效果
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath();
+    ctx.roundRect(startX, buttonY, buttonWidth, buttonHeight/2, 12);
+    ctx.fill();
+    // 按钮文字
+    ctx.fillStyle = 'white';
+    ctx.font = '18px "Arial Black", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // ctx.shadowColor = 'rgba(0,0,0,0.2)';
+            // ctx.shadowBlur = 3;
+            // ctx.shadowOffsetX = 0;
+            // ctx.shadowOffsetY = 1;
+            ctx.fillText('分享海报', startX + buttonWidth/2, buttonY + buttonHeight/2);
+    ctx.shadowBlur = 0;
+
+    // 绘制关闭海报按钮（增强版 - 主界面风格）
+    const closeGradient = ctx.createLinearGradient(startX + buttonWidth + buttonPadding, buttonY, startX + buttonWidth + buttonPadding, buttonY + buttonHeight);
+    closeGradient.addColorStop(0, '#e74c3c');
+    closeGradient.addColorStop(1, '#c0392b');
+    ctx.fillStyle = closeGradient;
+    ctx.beginPath();
+    ctx.roundRect(startX + buttonWidth + buttonPadding, buttonY, buttonWidth, buttonHeight, 12);
+    ctx.fill();
+    // 添加高光效果
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath();
+    ctx.roundRect(startX + buttonWidth + buttonPadding, buttonY, buttonWidth, buttonHeight/2, 12);
+    ctx.fill();
+    // 按钮文字
+    ctx.fillStyle = 'white';
+    ctx.font = '18px "Arial Black", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('关闭海报', startX + buttonWidth + buttonPadding + buttonWidth/2, buttonY + buttonHeight/2);
+            ctx.shadowBlur = 0;
+
+    // 绘制切换背景按钮（增强版）
+    const bgGradient = ctx.createLinearGradient(startX + buttonWidth*2 + buttonPadding*2, buttonY, startX + buttonWidth*2 + buttonPadding*2, buttonY + buttonHeight);
+    bgGradient.addColorStop(0, '#2ecc71');
+    bgGradient.addColorStop(1, '#27ae60');
+    ctx.fillStyle = bgGradient;
+    ctx.beginPath();
+    ctx.roundRect(startX + buttonWidth*2 + buttonPadding*2, buttonY, buttonWidth, buttonHeight, 10);
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.fillText('切换背景', startX + buttonWidth*2 + buttonPadding*2 + buttonWidth/2, buttonY + buttonHeight/2);
+
+    // 存储按钮位置供事件处理使用
+    canvas.buttonAreas = {
+        share: {x: startX, y: buttonY, width: buttonWidth, height: buttonHeight},
+        close: {x: startX + buttonWidth + buttonPadding, y: buttonY, width: buttonWidth, height: buttonHeight},
+        changeBg: {x: startX + buttonWidth*2 + buttonPadding*2, y: buttonY, width: buttonWidth, height: buttonHeight}
+    };
+    }
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+        // 显示海报和遮罩
+        overlay.style.display = 'block';
+        canvas.style.display = 'block';
+        // ==== 新增居中样式 ====
+        canvas.style.margin = '0 auto';
+        canvas.style.position = 'absolute';
+        canvas.style.top = '50%';
+        canvas.style.left = '50%';
+        canvas.style.transform = 'translate(-50%, -50%)';
+        canvas.style.transformOrigin = 'center center';
+        // ======================
+        document.getElementById('closePosterBtn').style.display = 'none';
+        document.getElementById('sharePosterBtn').style.display = 'none';
+            // 添加微信环境检测提示
+            if (navigator.userAgent.includes('MicroMessenger')) {
+                const wechatTip = document.createElement('div');
+                wechatTip.textContent = '微信用户请点击"分享海报"后长按保存';
+                wechatTip.style.position = 'fixed';
+                wechatTip.style.bottom = '180px';
+                wechatTip.style.left = '50%';
+                wechatTip.style.transform = 'translateX(-50%)';
+                wechatTip.style.color = '#3498db';
+                wechatTip.style.fontSize = '14px';
+                wechatTip.style.padding = '5px 10px';
+                wechatTip.style.backgroundColor = 'rgba(255,255,255,0.8)';
+                wechatTip.style.borderRadius = '4px';
+                wechatTip.id = 'wechatEnvironmentTip';
+                document.body.appendChild(wechatTip);
+            }
+        }
+
+        // 关闭海报
+        function handleButtonHover(e) {
+    const canvas = document.getElementById('posterCanvas');
+    if (!canvas.buttonAreas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    // 检测鼠标是否在按钮区域
+    const areas = canvas.buttonAreas;
+    let isOverButton = false;
+    
+    Object.values(areas).forEach(area => {
+        if (x >= area.x && x <= area.x + area.width && y >= area.y && y <= area.y + area.height) {
+            isOverButton = true;
+            canvas.style.cursor = 'pointer';
+        }
+    });
+    
+    if (!isOverButton) {
+        canvas.style.cursor = 'default';
+        // 恢复原始按钮样式
+        if (canvas.isHovered) {
+            generatePoster();
+            canvas.isHovered = false;
+        }
+    }
+}
+
+function closePoster() {
+            document.getElementById('posterCanvas').style.display = 'none';
+            document.getElementById('posterOverlay').style.display = 'none';
+            document.getElementById('closePosterBtn').style.display = 'none';
+            document.getElementById('sharePosterBtn').style.display = 'none';
+            // 清理可能残留的微信预览容器
+            const wechatContainer = document.getElementById('wechatSaveContainer');
+            if (wechatContainer) {
+                document.body.removeChild(wechatContainer);
+            }
+            // 清理微信环境提示
+            const wechatTip = document.getElementById('wechatEnvironmentTip');
+            if (wechatTip) {
+                document.body.removeChild(wechatTip);
+            }
+        }
+
+        // 保存海报图片
+        function savePoster() {
+    const canvas = document.getElementById('posterCanvas');
+    // 1. 保存当前canvas状态（含按钮）
+    const originalCanvasData = canvas.toDataURL();
+    
+    // 2. 生成不带按钮的海报
+    generatePoster(false);
+    
+    // 3. 获取无按钮版本的图片数据
+    const shareImageData = canvas.toDataURL('image/png');
+    
+    // 4. 立即恢复带按钮的原始海报
+    generatePoster(true);
+    
+    // 5. 执行保存逻辑（使用无按钮版本的图片数据）
+    const isQQ = navigator.userAgent.toLowerCase().indexOf('qq/') > -1 || navigator.userAgent.toLowerCase().indexOf('mqqbrowser') > -1;
+
+    if (isQQ) {
+        // QQ环境下的保存逻辑
+        alert('请长按图片选择"保存图片"到相册');
+        // 创建适合QQ的预览模式
+        const qqViewer = document.createElement('div');
+        qqViewer.style.position = 'fixed';
+        qqViewer.style.top = '0';
+        qqViewer.style.left = '0';
+        qqViewer.style.width = '100%';
+        qqViewer.style.height = '100%';
+        qqViewer.style.backgroundColor = 'rgba(0,0,0,0.9)';
+        qqViewer.style.display = 'flex';
+        qqViewer.style.alignItems = 'center';
+        qqViewer.style.justifyContent = 'center';
+        qqViewer.style.zIndex = '9999';
+
+        const qqImg = document.createElement('img');
+        qqImg.src = shareImageData;
+        qqImg.style.maxWidth = '90%';
+        qqImg.style.maxHeight = '80vh';
+        qqImg.style.border = '8px solid white';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '关闭';
+        closeBtn.style.position = 'absolute';
+        closeBtn.style.top = '20px';
+        closeBtn.style.right = '20px';
+        closeBtn.style.padding = '8px 16px';
+        closeBtn.style.backgroundColor = 'white';
+        closeBtn.style.border = 'none';
+        closeBtn.style.borderRadius = '4px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.onclick = () => qqViewer.remove();
+
+        qqViewer.appendChild(qqImg);
+        qqViewer.appendChild(closeBtn);
+        document.body.appendChild(qqViewer);
+    } else {
+        // 普通浏览器下载逻辑
+        const link = document.createElement('a');
+        link.download = '比赛海报.png';
+        link.href = shareImageData;
+        link.click();
+        alert('海报已下载，请到下载文件夹查看');
+        return;
+    }
+}
+
+        // 事件处理函数移到外部并缓存
+        function handleButtonClick(e) {
+            const canvas = document.getElementById('posterCanvas');
+            if (!canvas.buttonAreas) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            // 使用预计算的按钮区域
+            const areas = canvas.buttonAreas;
+            if (x >= areas.share.x && x <= areas.share.x + areas.share.width && y >= areas.share.y && y <= areas.share.y + areas.share.height) {
+                savePoster();
+            } else if (x >= areas.close.x && x <= areas.close.x + areas.close.width && y >= areas.close.y && y <= areas.close.y + areas.close.height) {
+                closePoster();
+            } else if (x >= areas.changeBg.x && x <= areas.changeBg.x + areas.changeBg.width && y >= areas.changeBg.y && y <= areas.changeBg.y + areas.changeBg.height) {
+                requestAnimationFrame(() => {
+                    currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundStyles.length;
+                    generatePoster();
+                });
+            }
+        }
+
+        // Grouping functions
+        function randomGroups() {
+            const playersText = document.getElementById('players-list').value;
+            if (!playersText) {
+                alert('请输入参与人员');
+                return;
+            }
+
+            // Split players into array and filter out empty lines
+    let players = playersText.split('\n').filter(p => p.trim() !== '');
+
+    // 检查人数是否至少4人
+    if (players.length < 4) {
+        showNotification("至少需要4人才能组双打哦~");
+        const button = document.querySelector('button[onclick="randomGroups()"]');
+        button.classList.add('shake', 'border-red');
+        setTimeout(() => button.classList.remove('shake', 'border-red'), 500);
+        return;
+    }
+
+    // Shuffle players array
+    for (let i = players.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [players[i], players[j]] = [players[j], players[i]];
+    }
+
+            // Create groups (pairs for doubles)
+            const groups = [];
+            for (let i = 0; i < players.length; i += 2) {
+                if (i + 1 < players.length) {
+                    groups.push([players[i], players[i + 1]]);
+                } else {
+                    // If odd number of players, add last one to the last group
+                    if (groups.length > 0) {
+                        groups[groups.length - 1].push(players[i]);
+                    } else {
+                        groups.push([players[i]]);
+                    }
+                }
+            }
+
+            // Display groups with flip animation
+            const resultsContainer = document.getElementById('group-results');
+            resultsContainer.innerHTML = '';
+
+            groups.forEach((group, index) => {
+                const groupCard = document.createElement('div');
+                groupCard.className = 'group-card';
+                groupCard.innerHTML = `
+                    <div class="group-card-front">
+                        <div class="group-number">${index + 1}</div>
+                        <div>组</div>
+                    </div>
+                    <div class="group-card-back">
+                        ${group.map(player => `<div>${player}</div>`).join('')}
+                    </div>
+                `;
+                resultsContainer.appendChild(groupCard);
+
+                // Add flip animation after a short delay
+                setTimeout(() => {
+                    groupCard.classList.add('flipped');
+                }, 100 * index);
+            });
+
+            // 添加分组完成提示
+    showNotification("搞定！快去球场虐对手吧 👊");
+
+    // 检查连续3次分组相同
+    const groupHistory = JSON.parse(localStorage.getItem('groupHistory') || '[]');
+    const currentGroupString = JSON.stringify(groups);
+    if (groupHistory.length >= 2 && groupHistory[groupHistory.length-1] === currentGroupString && groupHistory[groupHistory.length-2] === currentGroupString) {
+        showNotification("缘分啊！换个分组模式试试？");
+        createConfetti();
+    }
+    groupHistory.push(currentGroupString);
+    if (groupHistory.length > 3) groupHistory.shift();
+    localStorage.setItem('groupHistory', JSON.stringify(groupHistory));
+
+    // Save groups to localStorage
+    localStorage.setItem('lastGroups', JSON.stringify(groups));
+        }
+
+        function clearGroups() {
+    document.getElementById('group-results').innerHTML = '';
+    document.getElementById('players-list').value = '';
+}
+
+// 新添加的提示和动画函数
+function showNotification(message) {
+    const notification = document.getElementById('top-notification');
+    notification.textContent = message;
+    notification.style.display = 'block';
+    notification.style.backgroundColor = message.includes('至少需要') ? '#ff4444' : message.includes('搞定') ? '#00C851' : '#FFC107';
+    setTimeout(() => notification.style.display = 'none', 3000);
+}
+
+function createConfetti() {
+    const colors = ['#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff'];
+    for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random()*100+'vw';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
+        confetti.style.width = Math.random()*10+5+'px';
+        confetti.style.height = Math.random()*10+5+'px';
+        confetti.style.animationDuration = Math.random()*3+2+'s';
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 5000);
+    }
+}
+
+        // Expense tracker functions
+        function generateParticipants() {
+            const playersText = document.getElementById('expense-players').value;
+            if (!playersText) {
+                alert('请输入参与人员');
+                return;
+            }
+
+            // Split players into array and filter out empty lines
+            const players = playersText.split('\n').filter(p => p.trim() !== '');
+
+            // Generate checkboxes for participants
+            const participantsContainer = document.getElementById('participants-list');
+            participantsContainer.innerHTML = '';
+
+            players.forEach((player, index) => {
+                const checkboxId = `participant-${index}`;
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = checkboxId;
+                checkbox.className = 'participant-checkbox';
+                checkbox.value = player;
+                checkbox.checked = true;
+
+                const label = document.createElement('label');
+                label.htmlFor = checkboxId;
+                label.className = 'participant-label';
+                label.textContent = player;
+
+                participantsContainer.appendChild(checkbox);
+                participantsContainer.appendChild(label);
+            });
+        }
+
+        function clearExpenseResult() {
+            document.getElementById('expense-result').style.display = 'none';
+            document.getElementById('total-amount').value = '';
+        }
+
+        function calculateExpense() {
+            const expenseType = document.getElementById('expense-type').value;
+            const totalAmount = parseFloat(document.getElementById('total-amount').value);
+            const checkboxes = document.querySelectorAll('.participant-checkbox:checked');
+
+            if (isNaN(totalAmount) || totalAmount <= 0) {
+                alert('请输入有效的总金额');
+                return;
+            }
+
+            if (checkboxes.length === 0) {
+                alert('请选择参与人员');
+                return;
+            }
+
+            // Calculate per person cost
+            const perPerson = totalAmount / checkboxes.length;
+            const participants = Array.from(checkboxes).map(cb => cb.value);
+
+            // Display results
+            const resultContainer = document.getElementById('expense-result');
+            const summaryContainer = document.getElementById('expense-summary');
+            const detailsContainer = document.getElementById('expense-details');
+
+            summaryContainer.textContent = `${expenseType}：${totalAmount.toFixed(2)}元，共${checkboxes.length}人参与，人均：${perPerson.toFixed(2)}元`;
+            detailsContainer.innerHTML = '';
+
+            participants.forEach(participant => {
+                const detailItem = document.createElement('div');
+                detailItem.className = 'detail-item';
+                detailItem.innerHTML = `
+                    <span>${participant}</span>
+                    <span>${perPerson.toFixed(2)}元</span>
+                `;
+                detailsContainer.appendChild(detailItem);
+            });
+
+            // Show result
+            resultContainer.style.display = 'block';
+
+            // Save expense to localStorage
+            const expenseRecord = {
+                type: expenseType,
+                total: totalAmount,
+                perPerson: perPerson,
+                participants: participants,
+                date: new Date().toISOString()
+            };
+            const expenseHistory = JSON.parse(localStorage.getItem('expenseHistory') || '[]');
+            expenseHistory.push(expenseRecord);
+            localStorage.setItem('expenseHistory', JSON.stringify(expenseHistory));
+        }
+    </script>
+        <!-- 海报Canvas (隐藏) -->
+        <canvas id="posterCanvas" width="1200" height="1600" style="display: none; position: fixed; top: 50%; left: 50%; border: 8px solid white; box-shadow: 0 0 0 1px #e0e0e0, 0 4px 12px rgba(0,0,0,0.15); outline: 1px solid #f0f0f0; outline-offset: -5px; z-index: 1000;"></canvas>
+        <div id="posterOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 999;"></div>
+        <!-- 添加右上角关闭按钮 -->
+        <!-- 海报按钮容器 -->
+        <div style="display: flex; gap: 10px; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1001;">
+            <button id="sharePosterBtn" onclick="savePoster()" class="btn btn-primary" style="display: none;">分享海报</button>
+            <button id="closePosterBtn" onclick="closePoster()" class="btn btn-danger" style="display: none;">关闭海报</button>
+            <button id="changePosterBackgroundBtn" onclick="changeMainBackground()" class="btn btn-secondary" style="display: none;">切换背景</button>
+        </div>
+
+</body>
+</html>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+       
