@@ -1545,9 +1545,55 @@ function closePoster() {
     generatePoster(true);
     
     // 5. 执行保存逻辑（使用无按钮版本的图片数据）
+    const isWechat = navigator.userAgent.includes('MicroMessenger');
     const isQQ = navigator.userAgent.toLowerCase().indexOf('qq/') > -1 || navigator.userAgent.toLowerCase().indexOf('mqqbrowser') > -1;
 
-    if (isQQ) {
+    if (isWechat) {
+        // 微信环境预览逻辑
+        const posterImg = document.createElement('img');
+        posterImg.src = shareImageData;
+        posterImg.style.maxWidth = '90%';
+        posterImg.style.maxHeight = '80vh';
+        posterImg.style.border = '8px solid white';
+        posterImg.style.touchAction = 'none'; // 防止微信默认触摸行为
+        
+        const wechatContainer = document.createElement('div');
+        wechatContainer.style.position = 'fixed';
+        wechatContainer.style.top = '0';
+        wechatContainer.style.left = '0';
+        wechatContainer.style.width = '100%';
+        wechatContainer.style.height = '100%';
+        wechatContainer.style.backgroundColor = 'rgba(0,0,0,0.85)';
+        wechatContainer.style.display = 'flex';
+        wechatContainer.style.flexDirection = 'column';
+        wechatContainer.style.justifyContent = 'center';
+        wechatContainer.style.alignItems = 'center';
+        wechatContainer.style.zIndex = '9999';
+        wechatContainer.id = 'wechatSaveContainer';
+        
+        const tipText = document.createElement('div');
+        tipText.textContent = '✅ 长按图片选择"保存图片"到相册';
+        tipText.style.color = 'white';
+        tipText.style.fontSize = '18px';
+        tipText.style.marginTop = '20px';
+        tipText.style.textAlign = 'center';
+        
+        const closeBtn = document.createElement('div');
+        closeBtn.textContent = '关闭';
+        closeBtn.style.color = 'white';
+        closeBtn.style.fontSize = '16px';
+        closeBtn.style.marginTop = '15px';
+        closeBtn.style.padding = '8px 20px';
+        closeBtn.style.border = '1px solid white';
+        closeBtn.style.borderRadius = '20px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.onclick = () => document.body.removeChild(wechatContainer);
+        
+        wechatContainer.appendChild(posterImg);
+        wechatContainer.appendChild(tipText);
+        wechatContainer.appendChild(closeBtn);
+        document.body.appendChild(wechatContainer);
+    } else if (isQQ) {
         // QQ环境下的保存逻辑
         alert('请长按图片选择"保存图片"到相册');
         // 创建适合QQ的预览模式
