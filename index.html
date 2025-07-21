@@ -1759,8 +1759,9 @@ function changeMainBackground() {
     ctx.roundRect(startX, buttonY, buttonWidth, buttonHeight/2, 12);
     ctx.fill();
     // 按钮文字
-    ctx.fillStyle = 'white';
-    ctx.font = '18px "Arial Black", sans-serif';
+            ctx.fillStyle = 'white';
+            const buttonFontSize = getScaledFontSize(16); // 减小基准字体大小并使用缩放函数
+            ctx.font = `${buttonFontSize}px "Arial Black", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     // ctx.shadowColor = 'rgba(0,0,0,0.2)';
@@ -1784,8 +1785,8 @@ function changeMainBackground() {
     ctx.roundRect(startX + buttonWidth + buttonPadding, buttonY, buttonWidth, buttonHeight/2, 12);
     ctx.fill();
     // 按钮文字
-    ctx.fillStyle = 'white';
-    ctx.font = '18px "Arial Black", sans-serif';
+            ctx.fillStyle = 'white';
+            ctx.font = `${buttonFontSize}px "Arial Black", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('关闭海报', startX + buttonWidth + buttonPadding + buttonWidth/2, buttonY + buttonHeight/2);
@@ -1800,7 +1801,10 @@ function changeMainBackground() {
     ctx.roundRect(startX + buttonWidth*2 + buttonPadding*2, buttonY, buttonWidth, buttonHeight, 10);
     ctx.fill();
     ctx.fillStyle = 'white';
-    ctx.fillText('切换背景', startX + buttonWidth*2 + buttonPadding*2 + buttonWidth/2, buttonY + buttonHeight/2);
+            ctx.font = `${buttonFontSize}px "Arial Black", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('切换背景', startX + buttonWidth*2 + buttonPadding*2 + buttonWidth/2, buttonY + buttonHeight/2);
 
     // 存储按钮位置供事件处理使用
     canvas.buttonAreas = {

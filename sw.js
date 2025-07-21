@@ -1,12 +1,10 @@
-const CACHE_NAME = 'badminton-score-v2';
+const CACHE_NAME = 'badminton-score-v2'; // 添加缺失的缓存名称常量
 const ASSETS = [
   '/',
   '/index.html',
-  '/styles/main.css',
-  '/scripts/main.js',
   '/images/icon-192.png',
   '/images/icon-512.png'
-];
+]; // 移除不存在的CSS/JS引用
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -17,11 +15,18 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // 在fetch事件处理中添加
+  if (e.request.url.includes('canvas')) {
+    // 特殊处理Canvas请求
+    e.respondWith(new Response(JSON.stringify(backgroundStyles), {
+      headers: { 'Content-Type': 'application/json' }
+    }));
+  }
   e.respondWith(
     caches.match(e.request)
       .then(cached => {
         // 网络优先，失败时使用缓存
-        return cached || fetch(e.request)
+        return fetch(e.request)
           .then(response => {
             // 动态缓存新资源
             return caches.open(CACHE_NAME)
@@ -29,12 +34,8 @@ self.addEventListener('fetch', (e) => {
                 cache.put(e.request, response.clone());
                 return response;
               });
-          }).catch(() => {
-            // 对于HTML文档，返回缓存的首页
-            if (e.request.headers.get('accept').includes('text/html')) {
-              return caches.match('/');
-            }
-          });
+          })
+          .catch(() => cached || caches.match('/')); // 优化缓存回退逻辑
       })
   );
 });
