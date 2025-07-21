@@ -1,18 +1,18 @@
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open('badminton-score-v1').then((cache) => {
-      return cache.addAll([
-        '/',
-        'badminton-score.html'
-      ]);
-    })
-  );
+self.addEventListener('install', function(e) {
+    e.waitUntil(
+        caches.open('badminton-score-v1').then(function(cache) {
+            return cache.addAll([
+                '/badminton-score.html',
+                '/'
+            ]);
+        })
+    );
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
+self.addEventListener('fetch', function(e) {
+    e.respondWith(
+        caches.match(e.request).then(function(response) {
+            return response || fetch(e.request);
+        })
+    );
 });
