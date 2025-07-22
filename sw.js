@@ -1,10 +1,10 @@
-const CACHE_NAME = 'badminton-score-v2'; // 添加缺失的缓存名称常量
+const CACHE_NAME = 'badminton-score-v2';
 const ASSETS = [
   '/',
   '/index.html',
   '/images/icon-192.png',
   '/images/icon-512.png'
-]; // 移除不存在的CSS/JS引用
+];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -14,28 +14,34 @@ self.addEventListener('install', (e) => {
   );
 });
 
+// 添加activate事件处理，清理旧缓存并激活新Service Worker
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.filter(name => name !== CACHE_NAME)
+          .map(name => caches.delete(name))
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
 self.addEventListener('fetch', (e) => {
-  // 在fetch事件处理中添加
-  if (e.request.url.includes('canvas')) {
-    // 特殊处理Canvas请求
-    e.respondWith(new Response(JSON.stringify(backgroundStyles), {
-      headers: { 'Content-Type': 'application/json' }
-    }));
-  }
+  // 移除未定义的backgroundStyles引用，修复Canvas请求错误
   e.respondWith(
     caches.match(e.request)
       .then(cached => {
-        // 网络优先，失败时使用缓存
-        return fetch(e.request)
-          .then(response => {
-            // 动态缓存新资源
-            return caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(e.request, response.clone());
-                return response;
-              });
+        // 采用缓存优先策略，同时更新缓存
+        const fetchPromise = fetch(e.request)
+          .then(networkResponse => {
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(e.request, networkResponse.clone());
+            });
+            return networkResponse;
           })
-          .catch(() => cached || caches.match('/')); // 优化缓存回退逻辑
+          .catch(() => cached);
+
+        return cached || fetchPromise;
       })
   );
 });
